@@ -1,0 +1,39 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/PC.hdl
+
+/**
+ * A 16-bit counter with load and reset control bits.
+ * if      (reset[t] == 1) out[t+1] = 0
+ * else if (load[t] == 1)  out[t+1] = in[t]
+ * else if (inc[t] == 1)   out[t+1] = out[t] + 1  (integer addition)
+ * else                    out[t+1] = out[t]
+ */
+
+CHIP PC {
+    IN in[16],load,inc,reset;
+    OUT out[16];
+
+    PARTS:
+    	// this one was a toughy...
+    	// The 2 preceding OR gates are to check if the register should be loaded on either reset, load, or increment
+    	Or(a=load, b=inc, out=or1);
+    	Or(a=or1, b=reset, out=or);
+
+    	// use the result from the 2 ORs as the load flag. The input is from the last output.
+    	// since it's the next tick, it will output its self now
+    	Register(in=out4, load=or, out=out1, out=out);
+
+    	// increment the register value
+    	Inc16(in=out1, out=inc1);
+
+    	// check if the inc flag is asserted
+    	Mux16(a=false, b=inc1, sel=inc, out=out2);
+
+    	// check if the load flag is asserted, which will automatically discard the incremented value
+    	Mux16(a=out2, b=in, sel=load, out=out3);
+
+    	// check if the reset flag is asserted, then loop and send the value back to the register with the new flags and input
+    	Mux16(a=out3, b=false, sel=reset, out=out4);
+}
